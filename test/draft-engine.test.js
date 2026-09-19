@@ -99,14 +99,14 @@ test("holds results and score changes behind the broadcast reveal delay", () => 
   const viewerState = engine.publicState("a");
   const producerState = engine.publicState(null, { producer: true });
   assert.equal(viewerState.actions[0].champion, null);
-  assert.equal(viewerState.leaderboard.find(x => x.id === "a").seriesScore, 0);
+  assert.equal(viewerState.leaderboard.find(x => x.isMe).seriesScore, 0);
   assert.equal(producerState.actions[0].champion, "Ahri");
-  assert.ok(producerState.leaderboard.find(x => x.id === "a").seriesScore > 0);
+  assert.ok(producerState.leaderboard.find(x => x.name === "Alice").seriesScore > 0);
 
   advance(7_000);
   const revealed = engine.publicState("a");
   assert.equal(revealed.actions[0].champion, "Ahri");
-  assert.ok(revealed.leaderboard.find(x => x.id === "a").seriesScore > 0);
+  assert.ok(revealed.leaderboard.find(x => x.isMe).seriesScore > 0);
 });
 
 test("exports and restores a live recovery snapshot", () => {

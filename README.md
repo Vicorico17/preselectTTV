@@ -45,6 +45,26 @@ npm test
 - Standard, rapid, analyst-desk, and international match templates
 - Live vote distribution for the co-stream overlay
 
+### Milestone 3
+
+- Twitch video-overlay, panel, and broadcaster configuration entry points
+- Verified Twitch Extension JWTs using the base64 Extension secret
+- Persistent `U-` opaque Twitch viewer identities and temporary anonymous identities
+- Channel-isolated drafts, predictions, and leaderboards
+- Mobile panel layout within Twitch's 318×496 panel dimensions
+- Identity-sharing prompt for anonymous viewers
+- CSP-compatible, dependency-free Twitch CDN asset bundle
+- Hosted-test packaging command and reviewer walkthrough
+- Public Terms and Privacy pages
+
+Build the uploadable Twitch asset package with:
+
+```bash
+npm run extension:package
+```
+
+See [`docs/twitch-extension-review.md`](docs/twitch-extension-review.md) for console settings and the reviewer walkthrough.
+
 ## Twitch OAuth configuration
 
 Create a Twitch application and register this callback URL:
@@ -62,6 +82,7 @@ TWITCH_REDIRECT_URI=https://YOUR_DOMAIN/api/auth/callback
 SESSION_SECRET=a-long-random-secret
 TWITCH_BROADCASTER_IDS=123456
 TWITCH_MODERATOR_IDS=234567,345678
+TWITCH_EXTENSION_SECRET=base64-extension-secret
 ```
 
 When Twitch variables are absent, the producer desk runs in clearly labelled demo mode for local development.

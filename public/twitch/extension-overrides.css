@@ -1,0 +1,2 @@
+.button:disabled { opacity: .45; }
+html[data-view="panel"] .choices { max-height: 150px; }

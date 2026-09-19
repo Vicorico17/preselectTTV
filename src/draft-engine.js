@@ -268,10 +268,11 @@ export class DraftEngine {
         }
       }
     }
-    const leaderboard = [...visibleViewers.values()]
+    const rankedViewers = [...visibleViewers.values()]
       .sort((a, b) => b.seriesScore - a.seriesScore || b.gameScore - a.gameScore || a.name.localeCompare(b.name))
       .map(({ id, name, gameScore, seriesScore, correct, attempts, streak, bestStreak }) =>
         ({ id, name, gameScore, seriesScore, correct, attempts, streak, bestStreak }));
+    const leaderboard = rankedViewers.map(({ id, ...viewer }) => ({ ...viewer, isMe: Boolean(viewerId && id === viewerId) }));
     const actions = this.actions.map(({ scoreChanges, ...action }) => {
       if (producer || action.status !== "resolved" || !action.revealAt || now >= action.revealAt) return action;
       const { champion, correctVotes, rarityBonus, ...hidden } = action;
@@ -287,6 +288,7 @@ export class DraftEngine {
       round: this.round ? { ...this.round, voteCount: votes?.size || 0 } : null,
       voteBreakdown: this.voteBreakdown(),
       myPrediction: viewerId && votes ? votes.get(viewerId) || null : null,
+      me: viewerId ? leaderboard.find(viewer => viewer.isMe) || null : null,
       actions,
       lastAction,
       leaderboard,
