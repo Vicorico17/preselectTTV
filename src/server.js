@@ -13,7 +13,7 @@ const server = createServer(async (req, res) => {
   try {
     if (url.pathname.startsWith("/api/")) return handleApi(req, res);
 
-    const path = url.pathname === "/" ? "/index.html" : url.pathname === "/control" ? "/control.html" : url.pathname === "/overlay" ? "/overlay.html" : url.pathname;
+    const path = url.pathname === "/" ? "/index.html" : url.pathname === "/control" ? "/control.html" : url.pathname === "/overlay" ? "/overlay.html" : url.pathname === "/automation" ? "/automation.html" : url.pathname;
     if (path.includes("..")) { res.writeHead(400); return res.end("Invalid path."); }
     const file = await readFile(join(root, path));
     res.writeHead(200, { "content-type": types[extname(path)] || "application/octet-stream" });

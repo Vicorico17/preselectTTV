@@ -21,6 +21,12 @@ test("uses the complete 20-action professional draft order", () => {
   ]);
 });
 
+test("contains the current 16.18.1 professional champion roster", () => {
+  assert.equal(CHAMPIONS.length, 173);
+  assert.ok(CHAMPIONS.includes("Locke"));
+  assert.ok(CHAMPIONS.includes("Zaahen"));
+});
+
 test("locks votes at the server deadline", () => {
   const { engine, advance } = create();
   engine.startDraft();

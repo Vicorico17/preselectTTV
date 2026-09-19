@@ -79,10 +79,26 @@ button { cursor: pointer; }
 .control-grid { display:grid; grid-template-columns:360px minmax(0,1fr); gap:20px; }
 .control-panel { padding:21px; }
 .buttons { display:flex; flex-wrap:wrap; gap:8px; margin-top:15px; }
+.row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .action-list { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-top:15px; }
 .action-item { display:flex; justify-content:space-between; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:11px; color:var(--muted); }
 .action-item strong { color:var(--text); }
 .help { color:var(--muted); font-size:12px; line-height:1.55; }
+.automation-grid { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr); gap:20px; }
+.capture-card { padding:18px; }
+.capture-stage { position:relative; margin-top:14px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#04070c; aspect-ratio:16/9; }
+.capture-stage canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+.automation-side { display:grid; gap:14px; align-self:start; }
+.candidate { padding:15px; border:1px solid #70562c; border-radius:11px; background:linear-gradient(135deg,#292317,#171a23); }
+.candidate-name { margin:3px 0; font-size:27px; letter-spacing:-.04em; }
+.confidence { color:var(--gold); font-weight:900; }
+.suggestions { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.suggestion { border:1px solid var(--line); background:#182131; color:var(--text); border-radius:7px; padding:7px 9px; font-size:11px; }
+.automation-log { max-height:135px; overflow:auto; font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9da9bb; }
+.automation-log div { border-bottom:1px solid rgba(38,49,73,.55); padding:5px 0; }
+.detected-text { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.detected-text button { border:1px solid var(--line); border-radius:6px; background:#192234; color:#dbe4f3; padding:5px 7px; font-size:10px; }
+@media(max-width:900px){.automation-grid{grid-template-columns:1fr}}
 @media(max-width:860px){ .layout,.control-grid{grid-template-columns:1fr}.side-card{order:2}.shell{width:min(100% - 20px,700px)}.hero{padding:18px}.champions{max-height:330px}.topbar{align-items:flex-start}.status-pill{display:none} }
 
 body.overlay-page { background:transparent; overflow:hidden; }

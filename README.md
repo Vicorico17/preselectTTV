@@ -57,6 +57,26 @@ npm test
 - Hosted-test packaging command and reviewer walkthrough
 - Public Terms and Privacy pages
 
+### Milestone 4
+
+- Local browser-window capture using the Screen Capture API
+- Calibrated champion portrait crop with reusable browser calibration
+- Data Dragon 16.18.1 champion portrait recognition
+- Stable multi-frame proposals with configurable confidence threshold
+- Mandatory moderator confirmation before resolving predictions
+- Experimental on-device broadcast OCR when `TextDetector` is available
+- Optional licensed esports-data adapter for automatic live match metadata
+- Automation audit log and provider status
+
+Open `/automation` from the producer dashboard. Broadcast frames are processed locally and are not uploaded.
+
+To connect a licensed match-data feed, configure an endpoint returning a JSON `matches` array:
+
+```text
+ESPORTS_DATA_URL=https://provider.example/live-matches
+ESPORTS_DATA_TOKEN=optional-bearer-token
+```
+
 Build the uploadable Twitch asset package with:
 
 ```bash

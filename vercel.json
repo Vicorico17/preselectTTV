@@ -1,7 +1,8 @@
 {
   "rewrites": [
     { "source": "/control", "destination": "/control.html" },
-    { "source": "/overlay", "destination": "/overlay.html" }
+    { "source": "/overlay", "destination": "/overlay.html" },
+    { "source": "/automation", "destination": "/automation.html" }
   ],
   "functions": {
     "api/[...path].js": { "maxDuration": 10 }

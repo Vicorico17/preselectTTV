@@ -3,6 +3,7 @@ import { DraftEngine } from "./draft-engine.js";
 import { authFor, beginTwitchAuth, finishTwitchAuth, logout, twitchConfigured } from "./auth.js";
 import { loadSnapshot, persistenceMode, saveSnapshot } from "./persistence.js";
 import { verifyExtensionJwt } from "./extension-auth.js";
+import { championCatalog, liveEsportsMatches } from "./automation-data.js";
 
 const globalStore = globalThis.__pickPredictStore || { engines: new Map(), clients: new Set() };
 globalThis.__pickPredictStore = globalStore;
@@ -86,6 +87,14 @@ export async function handleApi(req, res) {
     if (url.pathname === "/api/auth/me") return sendJson(res, 200, authFor(req));
     const context = contextFor(req, url);
     const engine = engineFor(context.channelId);
+    if (url.pathname === "/api/automation/champions" && req.method === "GET") {
+      if (!context.producer) return sendJson(res, 401, { error: "Producer access required." });
+      return sendJson(res, 200, await championCatalog());
+    }
+    if (url.pathname === "/api/automation/matches" && req.method === "GET") {
+      if (!context.producer) return sendJson(res, 401, { error: "Producer access required." });
+      return sendJson(res, 200, await liveEsportsMatches());
+    }
     if (url.pathname === "/api/events") {
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
       res.write("event: refresh\ndata: connected\n\n");
