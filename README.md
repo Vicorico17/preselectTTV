@@ -23,7 +23,7 @@ Open the viewer page in multiple browsers or private windows to simulate indepen
 npm test
 ```
 
-## Included in Milestone 1
+## Included
 
 - Full 20-action professional pick/ban sequence
 - Match, team, best-of, game, and series setup
@@ -35,6 +35,37 @@ npm test
 - Live multi-browser synchronization using server-sent events with polling fallback
 - Responsive viewer and producer interfaces
 
+### Milestone 2
+
+- Twitch OAuth authorization-code flow for producer identity
+- Broadcaster and moderator allowlists
+- OBS browser-source overlay at `/overlay`
+- Broadcast-delay calibration that withholds results **and score changes**
+- Local automatic state recovery plus recovery snapshot export/import
+- Standard, rapid, analyst-desk, and international match templates
+- Live vote distribution for the co-stream overlay
+
+## Twitch OAuth configuration
+
+Create a Twitch application and register this callback URL:
+
+```text
+https://YOUR_DOMAIN/api/auth/callback
+```
+
+Configure these environment variables:
+
+```text
+TWITCH_CLIENT_ID=
+TWITCH_CLIENT_SECRET=
+TWITCH_REDIRECT_URI=https://YOUR_DOMAIN/api/auth/callback
+SESSION_SECRET=a-long-random-secret
+TWITCH_BROADCASTER_IDS=123456
+TWITCH_MODERATOR_IDS=234567,345678
+```
+
+When Twitch variables are absent, the producer desk runs in clearly labelled demo mode for local development.
+
 ## Prototype deployment note
 
-The current state store is in memory, intentionally keeping the first milestone dependency-free. It is suitable for local testing and a single long-running Node process. A production serverless deployment needs a shared store such as Postgres or Redis so match state survives cold starts and is consistent across instances.
+Local Node deployments automatically recover state from `.data/pick-predict.json`. Vercel currently uses warm-instance memory plus manual recovery snapshots; production serverless operation still needs a shared store such as Postgres or Redis for consistency across cold starts and instances.

@@ -88,3 +88,49 @@ test("new game preserves series points while reset removes current-game points",
   engine.resetGame();
   assert.equal(engine.viewers.get("a").seriesScore, award);
 });
+
+test("holds results and score changes behind the broadcast reveal delay", () => {
+  const { engine, advance } = create();
+  engine.revealDelaySeconds = 7;
+  engine.startDraft();
+  engine.predict("a", "Ahri");
+  engine.resolve("Ahri");
+
+  const viewerState = engine.publicState("a");
+  const producerState = engine.publicState(null, { producer: true });
+  assert.equal(viewerState.actions[0].champion, null);
+  assert.equal(viewerState.leaderboard.find(x => x.id === "a").seriesScore, 0);
+  assert.equal(producerState.actions[0].champion, "Ahri");
+  assert.ok(producerState.leaderboard.find(x => x.id === "a").seriesScore > 0);
+
+  advance(7_000);
+  const revealed = engine.publicState("a");
+  assert.equal(revealed.actions[0].champion, "Ahri");
+  assert.ok(revealed.leaderboard.find(x => x.id === "a").seriesScore > 0);
+});
+
+test("exports and restores a live recovery snapshot", () => {
+  const { engine } = create();
+  engine.startDraft();
+  engine.predict("a", "Aurora");
+  const snapshot = engine.snapshot();
+  const recovered = new DraftEngine();
+  recovered.restore(snapshot);
+  assert.equal(recovered.match.seriesName, "Test Cup");
+  assert.equal(recovered.round.index, 0);
+  assert.equal(recovered.publicState("a").myPrediction, "Aurora");
+});
+
+test("recalibrates broadcast settings and clears a completed series safely", () => {
+  const { engine } = create();
+  engine.configure({ roundSeconds: 12, revealDelaySeconds: 9 });
+  assert.equal(engine.roundSeconds, 12);
+  assert.equal(engine.revealDelaySeconds, 9);
+  engine.startDraft();
+  engine.predict("a", "Ahri");
+  engine.resolve("Ahri");
+  engine.clearSeries();
+  assert.equal(engine.match, null);
+  assert.equal(engine.status, "setup");
+  assert.equal(engine.viewers.get("a").seriesScore, 0);
+});

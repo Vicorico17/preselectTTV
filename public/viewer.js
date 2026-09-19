@@ -32,8 +32,10 @@ function render() {
   const available = state.champions.filter(champion => champion.toLowerCase().includes(search.toLowerCase()));
   const roundOpen = round?.status === "open";
   const title = round ? `${escapeHtml(team)} ${round.kind} ${round.slot}` : state.status === "complete" ? "Draft complete" : "Waiting for the draft";
+  const revealed = state.lastAction?.status === "resolved" && state.lastAction.champion;
   app.innerHTML = `<div class="layout">
     <section class="card hero">
+      ${revealed ? `<div class="reveal-banner">${escapeHtml(state.lastAction.side === "blue" ? match.blueTeam : match.redTeam)} locked <strong>${escapeHtml(state.lastAction.champion)}</strong> · ${state.lastAction.correctVotes || 0}/${state.lastAction.totalVotes || 0} correct</div>` : ""}
       <div class="eyebrow">${escapeHtml(match.seriesName)} · Game ${state.game} · Best of ${match.bestOf}</div>
       <div class="match-line"><div class="team blue-text">${escapeHtml(match.blueTeam)}</div><div class="versus">VS</div><div class="team red red-text">${escapeHtml(match.redTeam)}</div></div>
       <div class="round-heading"><div><div class="eyebrow">${round ? `${round.side} side · predict the next ${round.kind}` : "Draft status"}</div><h1 class="round-title">${title}</h1></div><div id="timer" class="timer"></div></div>

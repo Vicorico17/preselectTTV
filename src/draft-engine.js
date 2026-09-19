@@ -32,9 +32,10 @@ const freshViewer = (id, name) => ({
 });
 
 export class DraftEngine {
-  constructor({ now = () => Date.now(), roundSeconds = 20 } = {}) {
+  constructor({ now = () => Date.now(), roundSeconds = 20, revealDelaySeconds = 7 } = {}) {
     this.now = now;
     this.roundSeconds = roundSeconds;
+    this.revealDelaySeconds = revealDelaySeconds;
     this.viewers = new Map();
     this.predictions = new Map();
     this.setup();
@@ -49,16 +50,18 @@ export class DraftEngine {
     this.actions = [];
   }
 
-  createMatch({ seriesName, blueTeam, redTeam, bestOf = 3, roundSeconds }) {
+  createMatch({ seriesName, blueTeam, redTeam, bestOf = 3, roundSeconds, revealDelaySeconds, template = "standard" }) {
     if (!blueTeam?.trim() || !redTeam?.trim()) throw new Error("Both team names are required.");
     this.match = {
       id: randomUUID(),
       seriesName: seriesName?.trim() || "Live series",
       blueTeam: blueTeam.trim(),
       redTeam: redTeam.trim(),
-      bestOf: Math.max(1, Math.min(7, Number(bestOf) || 3))
+      bestOf: Math.max(1, Math.min(7, Number(bestOf) || 3)),
+      template
     };
     if (roundSeconds) this.roundSeconds = Math.max(5, Math.min(90, Number(roundSeconds)));
+    if (revealDelaySeconds !== undefined) this.revealDelaySeconds = Math.max(0, Math.min(60, Number(revealDelaySeconds) || 0));
     this.game = 1;
     this.status = "ready";
     this.currentIndex = 0;
@@ -67,6 +70,18 @@ export class DraftEngine {
     this.predictions.clear();
     for (const viewer of this.viewers.values()) Object.assign(viewer, freshViewer(viewer.id, viewer.name));
     return this.publicState();
+  }
+
+  configure({ roundSeconds, revealDelaySeconds }) {
+    if (roundSeconds !== undefined) this.roundSeconds = Math.max(5, Math.min(90, Number(roundSeconds) || 20));
+    if (revealDelaySeconds !== undefined) this.revealDelaySeconds = Math.max(0, Math.min(60, Number(revealDelaySeconds) || 0));
+    return { roundSeconds: this.roundSeconds, revealDelaySeconds: this.revealDelaySeconds };
+  }
+
+  clearSeries() {
+    this.setup();
+    this.predictions.clear();
+    for (const viewer of this.viewers.values()) Object.assign(viewer, freshViewer(viewer.id, viewer.name));
   }
 
   join(id, name) {
@@ -161,7 +176,11 @@ export class DraftEngine {
       scoreChanges.push({ viewerId, before, award, correct: prediction === champion });
     }
 
-    this.actions.push({ ...this.round, status: "resolved", champion, totalVotes, correctVotes, base, rarityBonus, scoreChanges });
+    const resolvedAt = this.now();
+    this.actions.push({
+      ...this.round, status: "resolved", champion, totalVotes, correctVotes, base, rarityBonus,
+      resolvedAt, revealAt: resolvedAt + this.revealDelaySeconds * 1000, scoreChanges
+    });
     this.currentIndex += 1;
     this.openRound();
   }
@@ -201,21 +220,75 @@ export class DraftEngine {
     this.status = "ready";
   }
 
-  publicState(viewerId) {
+  voteBreakdown() {
+    if (!this.round) return [];
+    const votes = this.predictions.get(this.round.id) || new Map();
+    const counts = new Map();
+    for (const champion of votes.values()) counts.set(champion, (counts.get(champion) || 0) + 1);
+    return [...counts].map(([champion, votes]) => ({ champion, votes, percentage: Math.round(votes / Math.max(1, counts.size ? [...counts.values()].reduce((a, b) => a + b, 0) : 1) * 100) }))
+      .sort((a, b) => b.votes - a.votes || a.champion.localeCompare(b.champion));
+  }
+
+  snapshot() {
+    return {
+      version: 2, savedAt: this.now(), match: this.match, game: this.game, status: this.status,
+      currentIndex: this.currentIndex, round: this.round, actions: this.actions,
+      roundSeconds: this.roundSeconds, revealDelaySeconds: this.revealDelaySeconds,
+      viewers: [...this.viewers.entries()],
+      predictions: [...this.predictions.entries()].map(([roundId, votes]) => [roundId, [...votes.entries()]])
+    };
+  }
+
+  restore(snapshot) {
+    if (!snapshot || ![1, 2].includes(snapshot.version) || !Array.isArray(snapshot.viewers)) throw new Error("Invalid recovery snapshot.");
+    this.match = snapshot.match || null;
+    this.game = Number(snapshot.game) || 1;
+    this.status = snapshot.status || "setup";
+    this.currentIndex = Number(snapshot.currentIndex) || 0;
+    this.round = snapshot.round || null;
+    this.actions = Array.isArray(snapshot.actions) ? snapshot.actions : [];
+    this.roundSeconds = Number(snapshot.roundSeconds) || 20;
+    this.revealDelaySeconds = Number(snapshot.revealDelaySeconds) || 0;
+    this.viewers = new Map(snapshot.viewers);
+    this.predictions = new Map((snapshot.predictions || []).map(([roundId, votes]) => [roundId, new Map(votes)]));
+    return this.publicState(null, { producer: true });
+  }
+
+  publicState(viewerId, { producer = false } = {}) {
     this.closeExpired();
+    const now = this.now();
     const votes = this.round ? this.predictions.get(this.round.id) : null;
-    const leaderboard = [...this.viewers.values()]
+    const visibleViewers = new Map([...this.viewers].map(([id, viewer]) => [id, { ...viewer }]));
+    if (!producer) {
+      for (const action of [...this.actions].reverse()) {
+        if (action.status !== "resolved" || !action.revealAt || now >= action.revealAt) continue;
+        for (const change of action.scoreChanges || []) {
+          const viewer = visibleViewers.get(change.viewerId);
+          if (viewer) Object.assign(viewer, change.before);
+        }
+      }
+    }
+    const leaderboard = [...visibleViewers.values()]
       .sort((a, b) => b.seriesScore - a.seriesScore || b.gameScore - a.gameScore || a.name.localeCompare(b.name))
       .map(({ id, name, gameScore, seriesScore, correct, attempts, streak, bestStreak }) =>
         ({ id, name, gameScore, seriesScore, correct, attempts, streak, bestStreak }));
+    const actions = this.actions.map(({ scoreChanges, ...action }) => {
+      if (producer || action.status !== "resolved" || !action.revealAt || now >= action.revealAt) return action;
+      const { champion, correctVotes, rarityBonus, ...hidden } = action;
+      return { ...hidden, champion: null, hiddenUntil: action.revealAt };
+    });
+    const lastAction = actions.at(-1) || null;
     return {
       match: this.match,
       game: this.game,
       status: this.status,
       roundSeconds: this.roundSeconds,
+      revealDelaySeconds: this.revealDelaySeconds,
       round: this.round ? { ...this.round, voteCount: votes?.size || 0 } : null,
+      voteBreakdown: this.voteBreakdown(),
       myPrediction: viewerId && votes ? votes.get(viewerId) || null : null,
-      actions: this.actions.map(({ scoreChanges, ...action }) => action),
+      actions,
+      lastAction,
       leaderboard,
       champions: CHAMPIONS
     };
