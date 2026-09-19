@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/control", "destination": "/control.html" }
+  ],
+  "functions": {
+    "api/[...path].js": { "maxDuration": 10 }
+  }
+}
